@@ -1,5 +1,0 @@
-*.log
-*.cache
-.Ds_Store
-**/cache/
-**/*.swp
