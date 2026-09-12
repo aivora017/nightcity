@@ -16,6 +16,7 @@ man-pages
 mesa
 nano
 networkmanager
+openssh
 paru
 paru-debug
 pipewire
