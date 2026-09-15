@@ -1,118 +1,115 @@
-//  nightcity — Quickshell test bar
-//
-//  PURPOSE: measure real-world RSS with actual content before committing to
-//  Quickshell as the widget layer. This is a measurement harness, not a design.
-//
-//  Palette: every colour verified with scripts/apca.py. Do not change a colour
-//  here without re-running that check.
+//  nightcity — bar v0.2
+//  Colours and type come from Theme.qml. Never hardcode a hex value here.
 
 import Quickshell
 import Quickshell.Io
+import Quickshell.Hyprland
 import QtQuick
 
 ShellRoot {
-    // ---- verified palette (see docs/design/RESEARCH-3-COLOUR.md) ----
-    readonly property color cBg      : "#08090a"   // background
-    readonly property color cBody    : "#e1e4e6"   // Lc -90.1  body
-    readonly property color cSubtle  : "#c7ccd0"   // Lc -75.2  subtle
-    readonly property color cMuted   : "#8d969e"   // Lc -45.0  muted
-    readonly property color cSpot    : "#6d7780"   // Lc -30.0  spot
-    readonly property color cRule    : "#4c5359"   // Lc -15.0  nontext
-    readonly property color cAlert   : "#e02b28"   // fill only
-    readonly property color cData    : "#00b4d8"   // fill only
-    readonly property color cWarn    : "#d9861f"   // fill only
+
+    SystemClock {
+        id: clock
+        precision: SystemClock.Seconds
+    }
 
     PanelWindow {
-        id: bar
+        anchors { top: true; left: true; right: true }
+        implicitHeight: 30
+        exclusiveZone: 30
+        color: Theme.bg
 
-        anchors {
-            top: true
-            left: true
-            right: true
-        }
-
-        implicitHeight: 26
-        exclusiveZone: 26
-        color: "transparent"
-
-        // ---- background + single hairline rule (Neomilitarism: no boxes) ----
+        // single hairline under the bar: Neomilitarism, no boxes
         Rectangle {
-            anchors.fill: parent
-            color: cBg
-
-            Rectangle {
-                anchors.bottom: parent.bottom
-                width: parent.width
-                height: 1
-                color: cRule
-            }
+            anchors.bottom: parent.bottom
+            width: parent.width
+            height: 1
+            color: Theme.hairline
         }
 
-        // ---- left: workspace indicator ----
+        // ---- left: workspaces, live from Hyprland ----
         Row {
             anchors.left: parent.left
-            anchors.leftMargin: 14
+            anchors.leftMargin: 16
             anchors.verticalCenter: parent.verticalCenter
-            spacing: 10
+            spacing: 12
 
-            Rectangle {
-                width: 2
-                height: 10
-                color: cAlert
+            Text {
+                text: "WS"
+                color: Theme.muted
+                font.family: Theme.faceHeader
+                font.weight: Font.Medium
+                font.pixelSize: Theme.sizeLabel
+                font.letterSpacing: 1.5
                 anchors.verticalCenter: parent.verticalCenter
             }
 
-            Text {
-                text: "WS 01"
-                color: cBody
-                font.family: "JetBrainsMono Nerd Font"
-                font.pixelSize: 10
-                anchors.verticalCenter: parent.verticalCenter
-            }
+            Repeater {
+                model: Hyprland.workspaces
 
-            Text {
-                text: "02   03"
-                color: cSpot
-                font.family: "JetBrainsMono Nerd Font"
-                font.pixelSize: 10
-                anchors.verticalCenter: parent.verticalCenter
+                delegate: Text {
+                    required property HyprlandWorkspace modelData
+                    readonly property bool isFocused:
+                        Hyprland.focusedWorkspace?.id === modelData.id
+
+                    visible: modelData.id > 0          // hide special workspaces
+                    text: String(modelData.id).padStart(2, "0")
+                    color: isFocused ? Theme.body : Theme.spot
+                    font.family: Theme.faceData
+                    font.pixelSize: Theme.sizeData
+                    anchors.verticalCenter: parent.verticalCenter
+
+                    // cyan tick under the focused workspace (cyan = activity)
+                    Rectangle {
+                        visible: parent.isFocused
+                        anchors.top: parent.bottom
+                        anchors.topMargin: 2
+                        width: parent.width
+                        height: 2
+                        color: Theme.dataFill
+                    }
+                }
             }
         }
 
-        // ---- centre: memory, as a bar not a number ----
+        // ---- centre: memory ----
         Row {
             anchors.centerIn: parent
-            spacing: 8
+            spacing: 10
 
             Text {
                 text: "MEM"
-                color: cMuted
-                font.family: "JetBrainsMono Nerd Font"
-                font.pixelSize: 9
+                color: Theme.muted
+                font.family: Theme.faceHeader
+                font.weight: Font.Medium
+                font.pixelSize: Theme.sizeLabel
+                font.letterSpacing: 1.5
                 anchors.verticalCenter: parent.verticalCenter
             }
 
             Rectangle {
-                width: 120
+                width: 140
                 height: 2
-                color: "#2a2e33"
+                color: Theme.hairline
                 anchors.verticalCenter: parent.verticalCenter
 
                 Rectangle {
-                    width: parent.width * memPoll.fraction
+                    width: parent.width * mem.fraction
                     height: parent.height
-                    color: memPoll.fraction > 0.85 ? cAlert
-                         : memPoll.fraction > 0.65 ? cWarn
-                         : cData
+                    color: mem.state === "alert" ? Theme.alertFill
+                         : mem.state === "warn"  ? Theme.warnFill
+                         : Theme.dataFill
                     Behavior on width { NumberAnimation { duration: 400 } }
                 }
             }
 
             Text {
-                text: memPoll.label
-                color: cSubtle
-                font.family: "JetBrainsMono Nerd Font"
-                font.pixelSize: 9
+                text: mem.label
+                color: mem.state === "alert" ? Theme.alertText
+                     : mem.state === "warn"  ? Theme.warnText
+                     : Theme.subtle
+                font.family: Theme.faceData
+                font.pixelSize: Theme.sizeData
                 anchors.verticalCenter: parent.verticalCenter
             }
         }
@@ -120,47 +117,34 @@ ShellRoot {
         // ---- right: clock ----
         Text {
             anchors.right: parent.right
-            anchors.rightMargin: 14
+            anchors.rightMargin: 16
             anchors.verticalCenter: parent.verticalCenter
-            text: clockPoll.text
-            color: cBody
-            font.family: "JetBrainsMono Nerd Font"
-            font.pixelSize: 10
+            text: Qt.formatDateTime(clock.date, "HH:mm:ss")
+            color: Theme.body
+            font.family: Theme.faceData
+            font.pixelSize: Theme.sizeData
         }
     }
 
-    // ---- clock: poll `date` once a second ----
+    // ---- memory: awk reads /proc/meminfo directly, no shell in between ----
     Process {
-        id: clockPoll
-        property string text: "--:--:--"
-        command: ["date", "+%H:%M:%S"]
-        running: true
-        stdout: StdioCollector {
-            onStreamFinished: clockPoll.text = this.text.trim()
-        }
-    }
-
-    Timer {
-        interval: 1000
-        running: true
-        repeat: true
-        onTriggered: clockPoll.running = true
-    }
-
-    // ---- memory: parse /proc/meminfo ----
-    Process {
-        id: memPoll
+        id: mem
         property real fraction: 0
-        property string label: "-- / --"
-        command: ["sh", "-c",
-            "awk '/MemTotal/{t=$2}/MemAvailable/{a=$2}END{printf \"%.3f %.1f %.1f\", (t-a)/t, (t-a)/1048576, t/1048576}' /proc/meminfo"]
+        property string label: "-.-G / -.-G"
+        readonly property string state:
+            fraction > 0.85 ? "alert" : fraction > 0.65 ? "warn" : "ok"
+
+        command: ["awk",
+            "/MemTotal/{t=$2} /MemAvailable/{a=$2} END{printf \"%.3f %.1f %.1f\", (t-a)/t, (t-a)/1048576, t/1048576}",
+            "/proc/meminfo"]
         running: true
+
         stdout: StdioCollector {
             onStreamFinished: {
                 const p = this.text.trim().split(" ");
                 if (p.length === 3) {
-                    memPoll.fraction = parseFloat(p[0]);
-                    memPoll.label = p[1] + " / " + p[2];
+                    mem.fraction = parseFloat(p[0]);
+                    mem.label = p[1] + "G / " + p[2] + "G";
                 }
             }
         }
@@ -170,6 +154,6 @@ ShellRoot {
         interval: 2000
         running: true
         repeat: true
-        onTriggered: memPoll.running = true
+        onTriggered: mem.running = true
     }
 }
