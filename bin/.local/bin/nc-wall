@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+# nc-wall — set wallpaper and write the adaptive palette
+# usage: nc-wall /path/to/image     |  nc-wall --restore
+set -euo pipefail
+
+CACHE="$HOME/.cache/nightcity"
+mkdir -p "$CACHE"
+
+if [[ "${1:-}" == "--restore" ]]; then
+  [[ -f "$CACHE/wallpaper" ]] || exit 0
+  IMG="$(cat "$CACHE/wallpaper")"
+else
+  IMG="$(realpath "${1:?give an image path}")"
+fi
+[[ -f "$IMG" ]] || { echo "nc-wall: file not found: $IMG" >&2; exit 1; }
+
+# wait until the wallpaper daemon is ready (matters at login)
+for _ in $(seq 50); do awww query >/dev/null 2>&1 && break; sleep 0.1; done
+
+awww img "$IMG" --transition-type grow --transition-duration 1.2 --transition-fps 60
+
+# shrink to 64x36, read every pixel, average the hue of colourful pixels
+HUE=$(magick "$IMG" -resize '64x36!' -depth 8 txt:- | awk '
+  BEGIN { PI = atan2(0, -1) }
+  match($0, /#[0-9A-Fa-f]{6}/) {
+    hx = substr($0, RSTART + 1, 6)
+    r = strtonum("0x" substr(hx,1,2)) / 255
+    g = strtonum("0x" substr(hx,3,2)) / 255
+    b = strtonum("0x" substr(hx,5,2)) / 255
+    mx = r; if (g > mx) mx = g; if (b > mx) mx = b
+    mn = r; if (g < mn) mn = g; if (b < mn) mn = b
+    d = mx - mn
+    if (d < 0.08) next                      # skip greys
+    if (mx == r) h = (g - b) / d
+    else if (mx == g) h = (b - r) / d + 2
+    else h = (r - g) / d + 4
+    h *= 60; if (h < 0) h += 360
+    w = (d / mx) * mx * mx                  # vivid, bright pixels count more
+    sx += cos(h * PI / 180) * w; sy += sin(h * PI / 180) * w; n++
+  }
+  END {
+    if (n == 0) { print 190; exit }         # grey image: fall back to cyan
+    H = atan2(sy, sx) * 180 / PI; if (H < 0) H += 360
+    printf "%d\n", H + 0.5
+  }')
+
+# hue + locked saturation/lightness -> hex
+hex() { awk -v h="$1" -v s="$2" -v l="$3" 'BEGIN {
+  h = h % 360; s /= 100; l /= 100
+  c = (1 - (2*l - 1 < 0 ? 1 - 2*l : 2*l - 1)) * s
+  hp = h / 60; t = hp - 2 * int(hp / 2) - 1; x = c * (1 - (t < 0 ? -t : t))
+  if (hp < 1) { r=c; g=x; b=0 } else if (hp < 2) { r=x; g=c; b=0 }
+  else if (hp < 3) { r=0; g=c; b=x } else if (hp < 4) { r=0; g=x; b=c }
+  else if (hp < 5) { r=x; g=0; b=c } else { r=c; g=0; b=x }
+  m = l - c/2
+  printf "#%02x%02x%02x", (r+m)*255+0.5, (g+m)*255+0.5, (b+m)*255+0.5 }'; }
+
+PRIMARY=$(hex "$HUE" 92 64)
+ANALOG=$(hex "$((HUE + 35))" 90 68)
+SPLIT=$(hex "$((HUE + 150))" 80 66)
+
+# write to a temp file, then move: readers never see a half-written file
+TMP="$(mktemp "$CACHE/palette.XXXX")"
+cat > "$TMP" <<EOF
+{
+  "wallpaper": "$IMG",
+  "hue": $HUE,
+  "primary": "$PRIMARY",
+  "analogous": "$ANALOG",
+  "split": "$SPLIT"
+}
+EOF
+mv "$TMP" "$CACHE/palette.json"
+echo "$IMG" > "$CACHE/wallpaper"
+echo "nc-wall: hue $HUE  primary $PRIMARY"
