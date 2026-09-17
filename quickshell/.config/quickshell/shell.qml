@@ -1,4 +1,4 @@
-//  nightcity — glass bar v0.3
+//  nightcity — glass bar v0.4
 //  Colours and type come from Theme.qml. Never hardcode an accent here.
 
 import Quickshell
@@ -13,6 +13,10 @@ ShellRoot {
     SystemClock {
         id: clock
         precision: SystemClock.Seconds
+    }
+
+    function goToWorkspace(target) {
+        Hyprland.dispatch("hl.dsp.focus({ workspace = " + target + " })")
     }
 
     PanelWindow {
@@ -33,7 +37,6 @@ ShellRoot {
             border.width: 1
             border.color: Theme.glassBorder
 
-            // soft light from above
             Rectangle {
                 anchors.fill: parent
                 radius: parent.radius
@@ -44,7 +47,6 @@ ShellRoot {
                 }
             }
 
-            // bright rim along the top edge
             Rectangle {
                 anchors { top: parent.top; left: parent.left; right: parent.right; leftMargin: 22; rightMargin: 22 }
                 height: 1
@@ -56,7 +58,6 @@ ShellRoot {
                 }
             }
 
-            // flowing accent edge along the bottom (pattern repeats, so the loop is seamless)
             Item {
                 anchors { bottom: parent.bottom; left: parent.left; right: parent.right; leftMargin: 24; rightMargin: 24 }
                 height: 2
@@ -79,7 +80,6 @@ ShellRoot {
                 }
             }
 
-            // corner brackets
             Repeater {
                 model: 4
                 delegate: Item {
@@ -147,7 +147,7 @@ ShellRoot {
                 }
             }
 
-            // workspaces 1–5 with a spring indicator
+            // workspaces 1–5: click to switch, scroll to move
             Rectangle {
                 id: wsTrack
                 readonly property int slot: 32
@@ -161,6 +161,12 @@ ShellRoot {
                 border.width: 1
                 border.color: "#12ffffff"
                 anchors.verticalCenter: parent.verticalCenter
+
+                MouseArea {
+                    anchors.fill: parent
+                    acceptedButtons: Qt.NoButton
+                    onWheel: wheel => goToWorkspace(wheel.angleDelta.y < 0 ? '"e+1"' : '"e-1"')
+                }
 
                 Rectangle {
                     visible: wsTrack.focusedId >= 1 && wsTrack.focusedId <= 5
@@ -181,28 +187,43 @@ ShellRoot {
                     Repeater {
                         model: 5
                         delegate: Item {
+                            id: wsSlot
                             required property int index
                             readonly property int wsId: index + 1
                             readonly property bool focused: wsTrack.focusedId === wsId
                             readonly property bool occupied: Hyprland.workspaces.values.some(w => w.id === wsId)
                             width: wsTrack.slot; height: 28
 
+                            Rectangle {
+                                anchors.fill: parent
+                                radius: 9
+                                color: "white"
+                                opacity: slotMouse.containsMouse && !wsSlot.focused ? 0.08 : 0
+                                Behavior on opacity { NumberAnimation { duration: 150 } }
+                            }
                             Text {
                                 anchors.centerIn: parent
-                                text: parent.wsId
-                                color: parent.focused ? "#07080f" : (parent.occupied ? Theme.body : Theme.spot)
+                                text: wsSlot.wsId
+                                color: wsSlot.focused ? "#07080f" : (wsSlot.occupied ? Theme.body : Theme.spot)
                                 font.family: Theme.faceData
                                 font.pixelSize: 13
-                                font.bold: parent.focused
+                                font.bold: wsSlot.focused
                                 Behavior on color { ColorAnimation { duration: 250 } }
                             }
                             Rectangle {
-                                visible: parent.occupied && !parent.focused
+                                visible: wsSlot.occupied && !wsSlot.focused
                                 width: 4; height: 4; radius: 2
                                 color: Theme.accent2
                                 anchors.horizontalCenter: parent.horizontalCenter
                                 anchors.bottom: parent.bottom
                                 anchors.bottomMargin: 1
+                            }
+                            MouseArea {
+                                id: slotMouse
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: goToWorkspace(wsSlot.wsId)
                             }
                         }
                     }
@@ -210,11 +231,42 @@ ShellRoot {
             }
         }
 
-        // ================= CENTRE: clock =================
+        // ================= CENTRE: cava + clock =================
         Row {
             anchors.centerIn: parent
-            spacing: 10
+            spacing: 14
 
+            // dancing bars
+            Item {
+                id: cavaBox
+                property var levels: []
+                width: 24 * 6
+                height: 32
+                anchors.verticalCenter: parent.verticalCenter
+
+                Row {
+                    anchors.centerIn: parent
+                    spacing: 2
+                    Repeater {
+                        model: 24
+                        delegate: Rectangle {
+                            required property int index
+                            width: 4
+                            radius: 2
+                            height: Math.max(3, (cavaBox.levels[index] || 0) / 100 * cavaBox.height)
+                            anchors.verticalCenter: parent.verticalCenter
+                            Behavior on height { NumberAnimation { duration: 70 } }
+                            gradient: Gradient {
+                                GradientStop { position: 0.0; color: Theme.accent3 }
+                                GradientStop { position: 0.5; color: Theme.accent }
+                                GradientStop { position: 1.0; color: Theme.accent2 }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // seconds ring
             Shape {
                 width: 30; height: 30
                 anchors.verticalCenter: parent.verticalCenter
@@ -292,6 +344,26 @@ ShellRoot {
     }
 
     // ================= DATA =================
+
+    // cava: one line per frame, 24 numbers separated by ;
+    Process {
+        id: cava
+        command: ["cava", "-p", Quickshell.env("HOME") + "/.config/cava/nightcity.conf"]
+        running: true
+        stdout: SplitParser {
+            onRead: data => {
+                const v = data.split(";");
+                if (v.length >= 24) cavaBox.levels = v.slice(0, 24).map(Number);
+            }
+        }
+        onRunningChanged: if (!running) cavaRestart.start()
+    }
+    Timer {
+        id: cavaRestart
+        interval: 3000
+        onTriggered: cava.running = true
+    }
+
     Process {
         id: mem
         property real fraction: 0
