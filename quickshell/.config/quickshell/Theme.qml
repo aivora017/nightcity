@@ -48,6 +48,7 @@ Singleton {
     readonly property color dataText: accent
 
     // ---------- glass (Qt colour format: #AARRGGBB) ----------
+    readonly property color glassTint:      "#99080a14"   // 60% dark, keeps text readable on bright wallpapers
     readonly property color glassFill:      "#14ffffff"
     readonly property color glassBorder:    "#26ffffff"
     readonly property color glassHighlight: "#47ffffff"

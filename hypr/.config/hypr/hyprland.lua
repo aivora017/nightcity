@@ -369,3 +369,11 @@ hl.window_rule({
     move  = "20 monitor_h-120",
     float = true,
 })
+
+-- nightcity: blur behind every shell surface named nightcity-*
+hl.layer_rule({
+    name = "nightcity-glass",
+    match = { namespace = "^nightcity-.*$" },
+    blur = true,
+    ignore_alpha = 0.03,
+})
