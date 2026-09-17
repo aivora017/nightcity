@@ -1,5 +1,5 @@
-//  nightcity — glass bar v0.4
-//  Colours and type come from Theme.qml. Never hardcode an accent here.
+//  nightcity — glass bar v0.5
+//  Colours and type come from Theme.qml. Right side lives in Tray.qml.
 
 import Quickshell
 import Quickshell.Io
@@ -99,7 +99,6 @@ ShellRoot {
             anchors { left: parent.left; leftMargin: 12; verticalCenter: parent.verticalCenter }
             spacing: 12
 
-            // NC button — opens the app drawer in phase 6
             Item {
                 id: ncButton
                 width: 38; height: 38
@@ -147,7 +146,6 @@ ShellRoot {
                 }
             }
 
-            // workspaces 1–5: click to switch, scroll to move
             Rectangle {
                 id: wsTrack
                 readonly property int slot: 32
@@ -236,7 +234,6 @@ ShellRoot {
             anchors.centerIn: parent
             spacing: 14
 
-            // dancing bars
             Item {
                 id: cavaBox
                 property var levels: []
@@ -266,7 +263,6 @@ ShellRoot {
                 }
             }
 
-            // seconds ring
             Shape {
                 width: 30; height: 30
                 anchors.verticalCenter: parent.verticalCenter
@@ -303,49 +299,13 @@ ShellRoot {
             }
         }
 
-        // ================= RIGHT: memory =================
-        Row {
-            anchors { right: parent.right; rightMargin: 20; verticalCenter: parent.verticalCenter }
-            spacing: 10
-
-            Text {
-                text: "MEM"
-                color: Theme.muted
-                font.family: Theme.faceHeader
-                font.weight: Font.Medium
-                font.pixelSize: Theme.sizeLabel
-                font.letterSpacing: 1.5
-                anchors.verticalCenter: parent.verticalCenter
-            }
-            Rectangle {
-                width: 90; height: 4; radius: 2
-                color: "#1fffffff"
-                anchors.verticalCenter: parent.verticalCenter
-                Rectangle {
-                    width: parent.width * mem.fraction
-                    height: parent.height
-                    radius: 2
-                    color: mem.state === "alert" ? Theme.alertFill
-                         : mem.state === "warn"  ? Theme.warnFill
-                         : Theme.accent
-                    Behavior on width { NumberAnimation { duration: 400 } }
-                }
-            }
-            Text {
-                text: mem.label
-                color: mem.state === "alert" ? Theme.alertText
-                     : mem.state === "warn"  ? Theme.warnText
-                     : Theme.subtle
-                font.family: Theme.faceData
-                font.pixelSize: Theme.sizeData
-                anchors.verticalCenter: parent.verticalCenter
-            }
+        // ================= RIGHT =================
+        Tray {
+            anchors { right: parent.right; rightMargin: 12; verticalCenter: parent.verticalCenter }
         }
     }
 
     // ================= DATA =================
-
-    // cava: one line per frame, 24 numbers separated by ;
     Process {
         id: cava
         command: ["cava", "-p", Quickshell.env("HOME") + "/.config/cava/nightcity.conf"]
@@ -362,35 +322,5 @@ ShellRoot {
         id: cavaRestart
         interval: 3000
         onTriggered: cava.running = true
-    }
-
-    Process {
-        id: mem
-        property real fraction: 0
-        property string label: "-.-G / -.-G"
-        readonly property string state:
-            fraction > 0.85 ? "alert" : fraction > 0.65 ? "warn" : "ok"
-
-        command: ["awk",
-            "/MemTotal/{t=$2} /MemAvailable/{a=$2} END{printf \"%.3f %.1f %.1f\", (t-a)/t, (t-a)/1048576, t/1048576}",
-            "/proc/meminfo"]
-        running: true
-
-        stdout: StdioCollector {
-            onStreamFinished: {
-                const p = this.text.trim().split(" ");
-                if (p.length === 3) {
-                    mem.fraction = parseFloat(p[0]);
-                    mem.label = p[1] + "G / " + p[2] + "G";
-                }
-            }
-        }
-    }
-
-    Timer {
-        interval: 2000
-        running: true
-        repeat: true
-        onTriggered: mem.running = true
     }
 }
