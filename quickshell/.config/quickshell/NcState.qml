@@ -14,4 +14,7 @@ Singleton {
         if (h.length > 50) h.pop();
         history = h;
     }
+    property bool netOpen: false
+    property bool wifiEnabled: true
+    property bool btPowered: false
 }

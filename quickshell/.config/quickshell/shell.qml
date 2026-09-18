@@ -13,7 +13,7 @@ ShellRoot {
     Notifications { }
     Launcher { }
     NotificationCentre { }
-
+    NetPanel { }
     IpcHandler {
         target: "nc"
         function launcher(): void {

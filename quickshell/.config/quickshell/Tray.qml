@@ -143,7 +143,8 @@ Row {
             if (mouse.button === Qt.RightButton)
                 tray.wpctl(["set-mute", "@DEFAULT_AUDIO_SINK@", "toggle"]);
             else
-                console.log("connections panel arrives in phase 7");
+                NcState.netOpen = !NcState.netOpen;
+                NcState.centreOpen = false;
         }
         onScrolled: wheel => tray.wpctl(["set-volume", "-l", "1", "@DEFAULT_AUDIO_SINK@",
                                          wheel.angleDelta.y > 0 ? "5%+" : "5%-"])
@@ -162,7 +163,7 @@ Row {
             }
             Text {  // bluetooth — goes live in phase 7
                 text: tray.icon(0xF00AF)
-                color: Theme.spot
+                color: NcState.btPowered ? Theme.body : Theme.spot
                 font.family: Theme.faceData
                 font.pixelSize: 16
                 anchors.verticalCenter: parent.verticalCenter
@@ -187,7 +188,7 @@ Row {
     // ================= NOTIFICATIONS =================
     TrayButton {
         width: 36
-                onClicked: { NcState.centreOpen = !NcState.centreOpen; NcState.unread = 0 }
+        onClicked: { NcState.centreOpen = !NcState.centreOpen; NcState.netOpen = false; NcState.unread = 0 }
         Text {
             anchors.centerIn: parent
             text: tray.icon(0xF009A)
