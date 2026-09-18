@@ -69,7 +69,7 @@ Row {
         width: 190
         border.width: 1
         border.color: "#17ffffff"
-        onClicked: console.log("search opens in phase 6")
+        onClicked: { NcState.launcherMode = "search"; NcState.launcherOpen = true }
 
         Row {
             anchors { left: parent.left; leftMargin: 12; verticalCenter: parent.verticalCenter }
@@ -187,13 +187,27 @@ Row {
     // ================= NOTIFICATIONS =================
     TrayButton {
         width: 36
-        onClicked: console.log("notification centre arrives in phase 5")
+        onClicked: NcState.unread = 0
         Text {
             anchors.centerIn: parent
             text: tray.icon(0xF009A)
             color: Theme.body
             font.family: Theme.faceData
             font.pixelSize: 17
+        }
+        Rectangle {
+            visible: NcState.unread > 0
+            anchors { top: parent.top; right: parent.right; topMargin: 3; rightMargin: 2 }
+            width: Math.max(16, badge.width + 8); height: 16; radius: 8
+            color: Theme.accent
+            Text {
+                id: badge
+                anchors.centerIn: parent
+                text: NcState.unread
+                color: "#07080f"
+                font.family: Theme.faceData
+                font.pixelSize: 10
+            }
         }
     }
 }

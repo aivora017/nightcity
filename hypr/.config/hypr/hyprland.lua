@@ -419,3 +419,7 @@ hl.animation({ leaf = "workspaces",       enabled = true, speed = 4.0, spring = 
 hl.animation({ leaf = "specialWorkspace", enabled = true, speed = 4.5, spring = "ncSoft", style = "slidevert" })
 hl.animation({ leaf = "layersIn",         enabled = true, speed = 4.0, bezier = "ncOut", style = "slide top" })
 hl.animation({ leaf = "layersOut",        enabled = true, speed = 3.5, bezier = "ncOut", style = "fade" })
+
+-- nightcity: shell shortcuts
+hl.bind("SUPER + D",     hl.dsp.exec_cmd("qs ipc call nc launcher"))
+hl.bind("SUPER + Space", hl.dsp.exec_cmd("qs ipc call nc search"))

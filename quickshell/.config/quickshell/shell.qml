@@ -10,6 +10,20 @@ import QtQuick.Shapes
 
 ShellRoot {
 
+    Notifications { }
+    Launcher { }
+
+    IpcHandler {
+        target: "nc"
+        function launcher(): void {
+            NcState.launcherMode = "apps";
+            NcState.launcherOpen = !NcState.launcherOpen;
+        }
+        function search(): void {
+            NcState.launcherMode = "search";
+            NcState.launcherOpen = !NcState.launcherOpen;
+        }
+    }
     SystemClock {
         id: clock
         precision: SystemClock.Seconds
@@ -142,7 +156,7 @@ ShellRoot {
                     anchors.fill: parent
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
-                    onClicked: console.log("NC clicked — app drawer arrives in phase 6")
+                    onClicked: { NcState.launcherMode = "apps"; NcState.launcherOpen = true }
                 }
             }
 
