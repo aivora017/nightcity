@@ -1,0 +1,189 @@
+#!/usr/bin/env bash
+# nc-doctor — check the machine, write a JSON report
+# usage: nc-doctor            (writes ~/.cache/nightcity/health.json)
+#        nc-doctor --print    (also prints the JSON)
+set -uo pipefail          # no -e: a failing check must not kill the scan
+
+CACHE="$HOME/.cache/nightcity"
+mkdir -p "$CACHE"
+ROWS=()
+
+# add <area> <name> <status> <result> <detail> <fix>
+add() {
+  local area="$1" name="$2" status="$3" result="$4" detail="$5" fix="${6:-}"
+  ROWS+=("{\"area\":\"$area\",\"name\":\"$name\",\"status\":\"$status\",\"result\":\"$result\",\"detail\":\"$detail\",\"fix\":\"$fix\"}")
+}
+
+# ---------- SYSTEM ----------
+FAILED=$(systemctl --failed --no-legend 2>/dev/null | wc -l)
+if [[ "$FAILED" -eq 0 ]]; then
+  add System "Failed services" ok "0 failed" "Every system service started normally."
+else
+  add System "Failed services" fail "$FAILED failed" \
+      "$FAILED service(s) failed to start. The list shows which and why." \
+      "systemctl --failed"
+fi
+
+ERRS=$(journalctl -b -p err --no-pager -q 2>/dev/null | wc -l)
+if [[ "$ERRS" -eq 0 ]]; then
+  add System "Boot errors" ok "none" "No error-level messages since boot."
+elif [[ "$ERRS" -lt 25 ]]; then
+  add System "Boot errors" warn "$ERRS in journal" \
+      "$ERRS error lines this boot. Firmware and graphics notices are usually harmless." \
+      "journalctl -b -p err"
+else
+  add System "Boot errors" fail "$ERRS in journal" \
+      "$ERRS error lines this boot, which is high. Worth reading." \
+      "journalctl -b -p err"
+fi
+
+RUNNING_K=$(uname -r)
+if [[ -d "/usr/lib/modules/$RUNNING_K" ]]; then
+  add System "Kernel" ok "$RUNNING_K" "The running kernel still has its modules installed."
+else
+  add System "Kernel" warn "reboot pending" \
+      "The kernel was updated since boot, so the running one no longer matches installed modules. USB and Wi-Fi drivers can fail to load until you reboot." \
+      "systemctl reboot"
+fi
+
+# ---------- STORAGE ----------
+USEP=$(df -P / | awk 'NR==2 {gsub("%","",$5); print $5}')
+FREEH=$(df -Ph / | awk 'NR==2 {print $4}')
+if   [[ "$USEP" -lt 80 ]]; then add Storage "Root disk" ok   "${USEP}% used" "$FREEH free on the root filesystem."
+elif [[ "$USEP" -lt 92 ]]; then add Storage "Root disk" warn "${USEP}% used" "$FREEH free. Btrfs slows down when very full." "sudo pacman -Sc"
+else                            add Storage "Root disk" fail "${USEP}% used" "Only $FREEH free. Clear space now." "sudo pacman -Sc && paccache -r"
+fi
+
+ROOTDEV=$(findmnt -no SOURCE / | sed 's/\[.*//')
+DISK=$(lsblk -no PKNAME "$ROOTDEV" 2>/dev/null | head -1)
+if command -v smartctl >/dev/null && [[ -n "$DISK" ]]; then
+  SMART=$(sudo -n smartctl -H "/dev/$DISK" 2>/dev/null | grep -i "overall-health" | awk -F: '{print $2}' | xargs)
+  if [[ -z "$SMART" ]]; then
+    add Storage "SSD health" info "needs sudo" "SMART data needs root. Run the command yourself to see drive health." "sudo smartctl -H /dev/$DISK"
+  elif [[ "$SMART" == "PASSED" ]]; then
+    add Storage "SSD health" ok "SMART passed" "The drive reports no failures."
+  else
+    add Storage "SSD health" fail "$SMART" "The drive reports a problem. Back up now." "sudo smartctl -a /dev/$DISK"
+  fi
+else
+  add Storage "SSD health" info "smartctl missing" "Install smartmontools to read drive health." "sudo pacman -S smartmontools"
+fi
+
+if findmnt -no FSTYPE / | grep -q btrfs; then
+  SCRUB=$(sudo -n btrfs scrub status / 2>/dev/null | grep -i "scrub started" | head -1)
+  if [[ -z "$SCRUB" ]]; then
+    add Storage "Btrfs scrub" info "unknown" "A scrub verifies every file against its checksum. Monthly is a good habit." "sudo btrfs scrub start /"
+  else
+    add Storage "Btrfs scrub" ok "has run" "$SCRUB"
+  fi
+fi
+
+# ---------- MEMORY ----------
+read -r MTOT MAVAIL < <(awk '/MemTotal/{t=$2} /MemAvailable/{a=$2} END{print t, a}' /proc/meminfo)
+MPCT=$(( (MTOT - MAVAIL) * 100 / MTOT ))
+TOPPROC=$(ps -eo rss=,args= | awk '{ n = $2; sub(/.*\//, "", n); m[n] += $1 } END { for (k in m) if (m[k] > x) { x = m[k]; b = k } printf "%s (%.1fG)", b, x / 1048576 }')
+if   [[ "$MPCT" -lt 70 ]]; then add Memory "Memory pressure" ok   "${MPCT}% used" "Largest process: $TOPPROC."
+elif [[ "$MPCT" -lt 88 ]]; then add Memory "Memory pressure" warn "${MPCT}% used" "Largest process: $TOPPROC. Closing unused tabs keeps things responsive." "ps -eo rss,comm --sort=-rss | head"
+else                            add Memory "Memory pressure" fail "${MPCT}% used" "Memory is nearly full. Largest process: $TOPPROC." "ps -eo rss,comm --sort=-rss | head"
+fi
+
+if swapon --show --noheadings 2>/dev/null | grep -q zram; then
+  ZSIZE=$(swapon --show=NAME,SIZE --noheadings | grep zram | awk '{print $2}')
+  add Memory "zram swap" ok "active, $ZSIZE" "Compressed swap in RAM is running."
+else
+  add Memory "zram swap" warn "not active" "Without zram, running out of memory freezes the machine sooner." "systemctl status systemd-zram-setup@zram0"
+fi
+
+# ---------- SECURITY ----------
+SB=$(od -An -t u1 /sys/firmware/efi/efivars/SecureBoot-8be4df61-93ca-11d2-aa0d-00e098032b8c 2>/dev/null | awk '{print $NF}')
+if   [[ "$SB" == "1" ]]; then add Security "Secure Boot" ok "enabled" "Firmware verifies the bootloader and kernel before running them."
+elif [[ -z "$SB"      ]]; then add Security "Secure Boot" info "unknown" "Could not read the firmware variable."
+else                           add Security "Secure Boot" warn "disabled" "Secure Boot is off, so unsigned boot code would run." "sbctl status"
+fi
+
+if systemctl is-active --quiet ufw || systemctl is-active --quiet firewalld || systemctl is-active --quiet iptables; then
+  add Security "Firewall" ok "running" "A firewall is filtering incoming connections."
+else
+  add Security "Firewall" fail "not running" \
+      "No firewall is active, so any listening service is reachable from your network. On cafe or office Wi-Fi that matters." \
+      "sudo pacman -S ufw && sudo ufw default deny incoming && sudo systemctl enable --now ufw"
+fi
+
+if systemctl is-active --quiet sshd; then
+  add Security "SSH server" warn "running" "Your machine accepts remote logins. Turn it off unless you use it." "sudo systemctl disable --now sshd"
+else
+  add Security "SSH server" ok "not running" "No remote login service listening."
+fi
+
+# ---------- HARDWARE ----------
+TEMPRAW=$(cat /sys/class/thermal/thermal_zone*/temp 2>/dev/null | sort -n | tail -1)
+if [[ -n "$TEMPRAW" ]]; then
+  TEMP=$(( TEMPRAW / 1000 ))
+  if   [[ "$TEMP" -lt 75 ]]; then add Hardware "CPU temperature" ok   "${TEMP} C" "Well below the throttle point."
+  elif [[ "$TEMP" -lt 90 ]]; then add Hardware "CPU temperature" warn "${TEMP} C" "Running hot. Dust in the fan is the usual cause."
+  else                            add Hardware "CPU temperature" fail "${TEMP} C" "Very hot. The CPU will slow itself down to cope."
+  fi
+fi
+
+if ls /sys/class/power_supply/BAT* >/dev/null 2>&1; then
+  BCAP=$(cat /sys/class/power_supply/BAT*/capacity 2>/dev/null | head -1)
+  add Hardware "Battery" ok "${BCAP}%" "Battery present and reporting."
+else
+  add Hardware "Battery" info "not present" "Running on AC power only."
+fi
+
+if timedatectl show -p NTPSynchronized --value 2>/dev/null | grep -q yes; then
+  add Hardware "Clock" ok "network synced" "Time is corrected from the network, so CMOS drift doesn't matter."
+else
+  add Hardware "Clock" warn "not synced" "The clock isn't syncing. With a weak CMOS battery it will drift while powered off." "sudo timedatectl set-ntp true"
+fi
+
+# ---------- PACKAGES ----------
+UPD=$(checkupdates 2>/dev/null | wc -l)
+if [[ "$UPD" -eq 0 ]]; then
+  add Packages "Updates" ok "up to date" "No pending updates, or checkupdates is unavailable."
+elif [[ "$UPD" -lt 40 ]]; then
+  add Packages "Updates" warn "$UPD available" "$UPD packages can be updated." "sudo pacman -Syu"
+else
+  add Packages "Updates" warn "$UPD available" "$UPD packages pending. Long gaps between updates make Arch upgrades riskier." "sudo pacman -Syu"
+fi
+
+ORPH=$(pacman -Qdtq 2>/dev/null | wc -l)
+if [[ "$ORPH" -gt 0 ]]; then
+  add Packages "Orphans" info "$ORPH packages" "Installed as dependencies, now needed by nothing." "sudo pacman -Rns \$(pacman -Qdtq)"
+else
+  add Packages "Orphans" ok "none" "No leftover dependency packages."
+fi
+
+# ---------- NETWORK ----------
+GW=$(ip route | awk '/^default/ {print $3; exit}')
+if [[ -n "$GW" ]] && ping -c1 -W1 "$GW" >/dev/null 2>&1; then
+  MS=$(ping -c1 -W1 "$GW" | awk -F'/' 'END{print $5}')
+  add Network "Gateway" ok "${MS} ms" "Your router replies normally."
+else
+  add Network "Gateway" fail "unreachable" "No reply from the router, so you are offline." "nmcli device status"
+fi
+
+# ---------- SCORE ----------
+JSON=$(printf '%s\n' "${ROWS[@]}" | paste -sd, -)
+OK=$(printf '%s\n' "${ROWS[@]}" | grep -c '"status":"ok"')
+INFO=$(printf '%s\n' "${ROWS[@]}" | grep -c '"status":"info"')
+WARN=$(printf '%s\n' "${ROWS[@]}" | grep -c '"status":"warn"')
+FAIL=$(printf '%s\n' "${ROWS[@]}" | grep -c '"status":"fail"')
+SCORE=$(( 100 - WARN * 4 - FAIL * 15 ))
+[[ "$SCORE" -lt 0 ]] && SCORE=0
+
+TMP="$(mktemp "$CACHE/health.XXXX")"
+cat > "$TMP" <<EOF
+{
+  "scanned": "$(date '+%H:%M')",
+  "score": $SCORE,
+  "counts": { "ok": $OK, "info": $INFO, "warn": $WARN, "fail": $FAIL },
+  "checks": [ $JSON ]
+}
+EOF
+mv "$TMP" "$CACHE/health.json"
+
+[[ "${1:-}" == "--print" ]] && cat "$CACHE/health.json"
+echo "nc-doctor: score $SCORE  ok $OK  warn $WARN  fail $FAIL" >&2
+
