@@ -187,7 +187,7 @@ Row {
     // ================= NOTIFICATIONS =================
     TrayButton {
         width: 36
-        onClicked: NcState.unread = 0
+                onClicked: { NcState.centreOpen = !NcState.centreOpen; NcState.unread = 0 }
         Text {
             anchors.centerIn: parent
             text: tray.icon(0xF009A)

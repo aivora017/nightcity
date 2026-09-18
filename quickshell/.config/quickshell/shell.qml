@@ -12,6 +12,7 @@ ShellRoot {
 
     Notifications { }
     Launcher { }
+    NotificationCentre { }
 
     IpcHandler {
         target: "nc"

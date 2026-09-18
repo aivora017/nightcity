@@ -15,6 +15,13 @@ Scope {
         onNotification: n => {
             n.tracked = true;
             NcState.unread++;
+            NcState.remember({
+                app: n.appName,
+                summary: n.summary,
+                body: n.body,
+                critical: n.urgency === NotificationUrgency.Critical,
+                time: Qt.formatDateTime(new Date(), "HH:mm")
+            });
         }
     }
 
