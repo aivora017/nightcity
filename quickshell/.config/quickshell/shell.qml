@@ -13,6 +13,7 @@ ShellRoot {
     Notifications { }
     Launcher { }
     NotificationCentre { }
+    Doctor { }
     NetPanel { }
     IpcHandler {
         target: "nc"

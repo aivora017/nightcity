@@ -38,6 +38,7 @@ Singleton {
     readonly property color muted:     "#8d969e"
     readonly property color spot:      "#6d7780"
     readonly property color hairline:  "#4c5359"
+    readonly property color okColor:   "#3ee0a1"    
     readonly property color alertFill: "#e02b28"
     readonly property color alertText: "#f09a98"
     readonly property color warnFill:  "#d9861f"

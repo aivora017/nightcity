@@ -17,4 +17,5 @@ Singleton {
     property bool netOpen: false
     property bool wifiEnabled: true
     property bool btPowered: false
+    property bool docOpen: false
 }

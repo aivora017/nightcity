@@ -111,7 +111,7 @@ Row {
     // ================= HEALTH =================
     TrayButton {
         width: 36
-        onClicked: console.log("health dashboard arrives in phase 8")
+        onClicked: { NcState.docOpen = !NcState.docOpen; NcState.netOpen = false; NcState.centreOpen = false }
         Text {
             anchors.centerIn: parent
             text: tray.icon(0xF05F6)
