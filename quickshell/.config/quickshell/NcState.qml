@@ -18,4 +18,6 @@ Singleton {
     property bool wifiEnabled: true
     property bool btPowered: false
     property bool docOpen: false
+    property bool keysOpen: false
+    property bool notesOpen: false
 }

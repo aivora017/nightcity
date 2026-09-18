@@ -14,6 +14,8 @@ ShellRoot {
     Launcher { }
     NotificationCentre { }
     Doctor { }
+    KeyBoard { }
+    Notes { }
     NetPanel { }
     IpcHandler {
         target: "nc"
@@ -25,6 +27,8 @@ ShellRoot {
             NcState.launcherMode = "search";
             NcState.launcherOpen = !NcState.launcherOpen;
         }
+        function keys(): void { NcState.keysOpen = !NcState.keysOpen }
+        function notes(): void { NcState.notesOpen = !NcState.notesOpen }
     }
     SystemClock {
         id: clock

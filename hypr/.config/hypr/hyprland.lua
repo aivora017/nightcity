@@ -423,3 +423,5 @@ hl.animation({ leaf = "layersOut",        enabled = true, speed = 3.5, bezier = 
 -- nightcity: shell shortcuts
 hl.bind("SUPER + D",     hl.dsp.exec_cmd("qs ipc call nc launcher"))
 hl.bind("SUPER + Space", hl.dsp.exec_cmd("qs ipc call nc search"))
+hl.bind("SUPER + slash",     hl.dsp.exec_cmd("qs ipc call nc keys"))
+hl.bind("SUPER + SHIFT + N", hl.dsp.exec_cmd("qs ipc call nc notes"))

@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+# nc-keys — turn hyprland.lua keybinds into JSON for the shortcuts board
+set -uo pipefail
+
+CONF="$HOME/.config/hypr/hyprland.lua"
+CACHE="$HOME/.cache/nightcity"
+mkdir -p "$CACHE"
+
+TMP="$(mktemp "$CACHE/keys.XXXX")"
+
+awk '
+  # pass 1 values: local terminal = "kitty"  ->  vars["terminal"] = "kitty"
+  /^[[:space:]]*local[[:space:]]+[A-Za-z_]+[[:space:]]*=[[:space:]]*"/ {
+    name = $2
+    v = $0; sub(/^[^"]*"/, "", v); sub(/".*$/, "", v)
+    vars[name] = v
+    next
+  }
+
+  /^[[:space:]]*hl\.bind\(/ {
+    line = $0
+    sub(/^[[:space:]]*hl\.bind\(/, "", line)
+
+    # key = everything before the first comma
+    key = line; sub(/,.*$/, "", key)
+    rest = line; sub(/^[^,]*,[[:space:]]*/, "", rest)
+
+    gsub(/"/, "", key); gsub(/\.\./, " ", key)
+    gsub(/[[:space:]]+/, " ", key); gsub(/^ | $/, "", key)
+    gsub(/mainMod/, "SUPER", key)
+
+    # action: hl.dsp.VERB(ARG)
+    sub(/^hl\.dsp\./, "", rest)
+    verb = rest; sub(/[\(\.].*$/, "", verb)
+    arg = rest
+    if (match(arg, /\(/)) { arg = substr(arg, RSTART + 1) } else { arg = "" }
+    sub(/\).*$/, "", arg)
+    gsub(/"/, "", arg)
+    gsub(/^[[:space:]]+|[[:space:]]+$/, "", arg)
+    if (arg in vars) arg = vars[arg]
+
+    group = "System"
+    if (verb ~ /exec/)                         group = "Apps"
+    if (verb ~ /focus|workspace/)              group = "Workspaces"
+    if (verb ~ /window|kill|fullscreen|float|split|pseudo/) group = "Windows"
+    if (arg ~ /wpctl|playerctl|brightnessctl/) group = "Media"
+    if (arg ~ /qs ipc|quickshell/)             group = "Shell"
+
+    label = verb
+    if (verb == "exec_cmd") { label = arg; sub(/ .*$/, "", label) }
+    else { gsub(/_/, " ", label); if (arg != "") label = label " " arg }
+    gsub(/\\/, "", label)
+
+    printf "%s{\"group\":\"%s\",\"key\":\"%s\",\"action\":\"%s\"}", sep, group, key, label
+    sep = ",\n  "
+  }
+' "$CONF" > "$TMP.rows"
+
+{
+  echo "["
+  echo -n "  "
+  cat "$TMP.rows"
+  cat <<'EOF'
+,
+  {"group":"Workspaces","key":"SUPER 1-0","action":"go to workspace"},
+  {"group":"Workspaces","key":"SUPER SHIFT 1-0","action":"move window to workspace"},
+  {"group":"Workspaces","key":"SUPER scroll","action":"cycle workspaces"},
+  {"group":"Windows","key":"SUPER drag","action":"move window"},
+  {"group":"Windows","key":"SUPER right drag","action":"resize window"}
+]
+EOF
+} > "$TMP"
+
+rm -f "$TMP.rows"
+mv "$TMP" "$CACHE/keys.json"
+echo "nc-keys: $(grep -c '"key"' "$CACHE/keys.json") shortcuts" >&2
