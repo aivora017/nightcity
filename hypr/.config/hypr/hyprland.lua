@@ -377,3 +377,45 @@ hl.layer_rule({
     blur = true,
     ignore_alpha = 0.03,
 })
+
+-------------------------------------
+---- NIGHTCITY: MOTION AND COLOUR ----
+-------------------------------------
+local nc = require("colors")
+
+hl.config({
+    general = {
+        border_size = 2,
+        gaps_in     = 5,
+        gaps_out    = 12,
+        col = {
+            active_border   = { colors = { "rgba(" .. nc.primary .. "ff)", "rgba(" .. nc.split .. "ff)" }, angle = 45 },
+            inactive_border = "rgba(1a1d26cc)",
+        },
+    },
+    decoration = {
+        rounding         = 14,
+        rounding_power   = 2,
+        active_opacity   = 1.0,
+        inactive_opacity = 0.94,
+        shadow = { enabled = true, range = 18, render_power = 2, color = "rgba(00000066)" },
+        blur   = { enabled = true, size = 4, passes = 2, new_optimizations = true, vibrancy = 0.17 },
+    },
+    animations = { enabled = true },
+})
+
+-- curves: springs bounce, beziers glide
+hl.curve("ncSnap", { type = "spring", mass = 1, stiffness = 878.5, dampening = 59.29 })
+hl.curve("ncSoft", { type = "spring", mass = 1, stiffness = 420.0, dampening = 46.0 })
+hl.curve("ncOut",  { type = "bezier", points = { {0.16, 1}, {0.3, 1} } })
+
+hl.animation({ leaf = "windowsIn",        enabled = true, speed = 4.5, spring = "ncSnap", style = "popin 85%" })
+hl.animation({ leaf = "windowsOut",       enabled = true, speed = 4.0, bezier = "ncOut",  style = "popin 88%" })
+hl.animation({ leaf = "windowsMove",      enabled = true, speed = 4.0, spring = "ncSoft" })
+hl.animation({ leaf = "border",           enabled = true, speed = 6.0, bezier = "ncOut" })
+hl.animation({ leaf = "fadeIn",           enabled = true, speed = 4.0, bezier = "ncOut" })
+hl.animation({ leaf = "fadeOut",          enabled = true, speed = 3.0, bezier = "ncOut" })
+hl.animation({ leaf = "workspaces",       enabled = true, speed = 4.0, spring = "ncSoft", style = "slidefade 20%" })
+hl.animation({ leaf = "specialWorkspace", enabled = true, speed = 4.5, spring = "ncSoft", style = "slidevert" })
+hl.animation({ leaf = "layersIn",         enabled = true, speed = 4.0, bezier = "ncOut", style = "slide top" })
+hl.animation({ leaf = "layersOut",        enabled = true, speed = 3.5, bezier = "ncOut", style = "fade" })
