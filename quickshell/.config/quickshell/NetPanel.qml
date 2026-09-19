@@ -29,10 +29,33 @@ PanelWindow {
 
     // ---------- audio ----------
     PwObjectTracker { objects: Pipewire.nodes.values }
+    property var sinks: []
+    property var streams: []
+    function refreshAudio() {
+        const sk = [], st = [];
+        for (const n of Pipewire.nodes.values) {
+            if (n.isSink && !n.isStream) { sk.push(n); continue; }
+            if (!n.isStream || !n.isSink) continue;   // playback stream = stream AND sink
+            const props = n.properties || {};
+            const name = (props["application.name"] || n.name || "").toLowerCase();
+            if (name.indexOf("cava") !== -1) continue;
+            st.push(n);
+        }
+        sinks = sk;
+        streams = st;
+    }
+    Connections {
+        target: Pipewire.nodes
+        function onValuesChanged() { root.refreshAudio() }
+    }
+    Timer {
+        interval: 2000
+        running: NcState.netOpen
+        repeat: true
+        onTriggered: root.refreshAudio()
+    }
+    Component.onCompleted: { refreshAudio(); refresh() }
     readonly property var sink: Pipewire.defaultAudioSink
-    readonly property var sinks: Pipewire.nodes.values.filter(n => n.isSink && !n.isStream && n.audio)
-    readonly property var streams: Pipewire.nodes.values.filter(n => n.isStream && n.audio && !n.isSink && !(n.properties && n.properties["stream.monitor"] === true) && (n.properties ? n.properties["application.name"] : "") !== "cava")
-
     // ---------- commands ----------
     Process { id: runner }
     function run(cmd) { runner.command = ["sh", "-c", cmd]; runner.running = true }
@@ -90,7 +113,6 @@ PanelWindow {
 
     function refresh() { wifiScan.running = true; statePoll.running = true }
     onVisibleChanged: if (visible) { refresh(); askSsid = "" }
-    Component.onCompleted: refresh()
     Timer { interval: 10000; running: true; repeat: true; onTriggered: root.refresh() }
     Timer { interval: 2000; running: true; repeat: true; onTriggered: netSpeed.running = true }
     Timer { id: refreshSoon; interval: 1500; onTriggered: root.refresh() }
