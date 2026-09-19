@@ -23,4 +23,7 @@ Singleton {
     property bool powerOpen: false
     property bool nightLight: false
     property bool vpnUp: false
+    property bool btScanning: false
+    property string governor: "powersave"
+    property bool locationOn: false
 }

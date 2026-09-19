@@ -78,7 +78,7 @@ PanelWindow {
     }
     Process {
         id: statePoll
-        command: ["sh", "-c", "nmcli radio wifi; bluetoothctl show | grep -c 'Powered: yes'; pgrep -c hyprsunset; nmcli -t -f TYPE connection show --active | grep -c vpn"]
+        command: ["sh", "-c", "nmcli radio wifi; bluetoothctl show | grep -c 'Powered: yes'; pgrep -c hyprsunset; nmcli -t -f TYPE connection show --active | grep -c vpn; cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor 2>/dev/null || echo unknown; systemctl is-active geoclue 2>/dev/null || echo inactive"]
         stdout: StdioCollector {
             onStreamFinished: {
                 const l = this.text.trim().split("\n");
@@ -86,6 +86,8 @@ PanelWindow {
                 NcState.btPowered = (l[1] || "0").trim() !== "0";
                 NcState.nightLight = (l[2] || "0").trim() !== "0";
                 NcState.vpnUp = (l[3] || "0").trim() !== "0";
+                NcState.governor = (l[4] || "unknown").trim();
+                NcState.locationOn = (l[5] || "inactive").trim() === "active";
             }
         }
     }
@@ -198,7 +200,8 @@ PanelWindow {
                             { label: "Bluetooth",  on: NcState.btPowered,   cmd: NcState.btPowered ? "bluetoothctl power off" : "bluetoothctl power on" },
                             { label: "Night light", on: NcState.nightLight, cmd: NcState.nightLight ? "pkill hyprsunset" : "hyprsunset -t 4000 &" },
                             { label: "VPN",        on: NcState.vpnUp,       cmd: NcState.vpnUp ? "nmcli connection down id \"$(nmcli -t -f NAME,TYPE connection show --active | grep vpn | cut -d: -f1 | head -1)\"" : "nmcli connection up id \"$(nmcli -t -f NAME,TYPE connection show | grep vpn | cut -d: -f1 | head -1)\"" },
-                            { label: "Screenshot", on: false,               cmd: "$HOME/.local/bin/nc-shot region" }
+                            { label: "Screenshot", on: false,               cmd: "$HOME/.local/bin/nc-shot region" },
+                            { label: "Location",   on: NcState.locationOn,  cmd: NcState.locationOn ? "systemctl --user stop geoclue-agent || systemctl stop geoclue" : "systemctl start geoclue || systemctl --user start geoclue-agent" }
                         ]
                         delegate: Rectangle {
                             required property var modelData
@@ -282,11 +285,53 @@ PanelWindow {
                     }
                 }
 
+                // ---------- cpu governor ----------
+                Row {
+                    width: parent.width
+                    spacing: 8
+                    Text {
+                        text: "CPU"
+                        color: Theme.spot
+                        font.family: Theme.faceHeader
+                        font.pixelSize: 11
+                        font.letterSpacing: 1.5
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+                    Repeater {
+                        model: [
+                            { label: "Save",    gov: "powersave" },
+                            { label: "Perform", gov: "performance" }
+                        ]
+                        delegate: Rectangle {
+                            required property var modelData
+                            width: 96; height: 32; radius: 11
+                            readonly property bool on: NcState.governor === modelData.gov
+                            color: on ? Theme.accent : "#18ffffff"
+                            Behavior on color { ColorAnimation { duration: 180 } }
+                            Text {
+                                anchors.centerIn: parent
+                                text: modelData.label
+                                color: parent.on ? "#07080f" : Theme.subtle
+                                font.family: Theme.faceHeader
+                                font.pixelSize: 12
+                            }
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: {
+                                    root.run("echo " + modelData.gov + " | sudo -n tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor >/dev/null");
+                                    refreshSoon.start();
+                                }
+                            }
+                        }
+                    }
+                }
+
                 Text { text: "NETWORKS"; color: Theme.spot; font.family: Theme.faceHeader; font.pixelSize: 11; font.letterSpacing: 1.5 }
 
                 ListView {
                     width: parent.width
-                    height: 250
+                    height: 150
                     clip: true
                     spacing: 3
                     model: root.networks
@@ -394,6 +439,8 @@ PanelWindow {
                         }
                     }
                 }
+
+                NcBluetooth { width: parent.width }
             }
 
             // ================= SOUND TAB =================
