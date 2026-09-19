@@ -57,8 +57,7 @@ PanelWindow {
     Component.onCompleted: { refreshAudio(); refresh() }
     readonly property var sink: Pipewire.defaultAudioSink
     // ---------- commands ----------
-    Process { id: runner }
-    function run(cmd) { runner.command = ["sh", "-c", cmd]; runner.running = true }
+    function run(cmd) { Quickshell.execDetached(["sh", "-c", cmd]) }
 
     Process {
         id: wifiScan
@@ -79,12 +78,14 @@ PanelWindow {
     }
     Process {
         id: statePoll
-        command: ["sh", "-c", "nmcli radio wifi; bluetoothctl show | grep -c 'Powered: yes'"]
+        command: ["sh", "-c", "nmcli radio wifi; bluetoothctl show | grep -c 'Powered: yes'; pgrep -c hyprsunset; nmcli -t -f TYPE connection show --active | grep -c vpn"]
         stdout: StdioCollector {
             onStreamFinished: {
                 const l = this.text.trim().split("\n");
                 NcState.wifiEnabled = (l[0] || "").trim() === "enabled";
                 NcState.btPowered = (l[1] || "0").trim() !== "0";
+                NcState.nightLight = (l[2] || "0").trim() !== "0";
+                NcState.vpnUp = (l[3] || "0").trim() !== "0";
             }
         }
     }
@@ -188,16 +189,20 @@ PanelWindow {
                 spacing: 12
                 visible: root.tab === 0
 
-                Row {
-                    spacing: 10
+                Grid {
+                    columns: 3
+                    spacing: 8
                     Repeater {
                         model: [
-                            { label: "Wi-Fi",     on: NcState.wifiEnabled, cmd: NcState.wifiEnabled ? "nmcli radio wifi off" : "nmcli radio wifi on" },
-                            { label: "Bluetooth", on: NcState.btPowered,   cmd: NcState.btPowered ? "bluetoothctl power off" : "bluetoothctl power on" }
+                            { label: "Wi-Fi",      on: NcState.wifiEnabled, cmd: NcState.wifiEnabled ? "nmcli radio wifi off" : "nmcli radio wifi on" },
+                            { label: "Bluetooth",  on: NcState.btPowered,   cmd: NcState.btPowered ? "bluetoothctl power off" : "bluetoothctl power on" },
+                            { label: "Night light", on: NcState.nightLight, cmd: NcState.nightLight ? "pkill hyprsunset" : "hyprsunset -t 4000 &" },
+                            { label: "VPN",        on: NcState.vpnUp,       cmd: NcState.vpnUp ? "nmcli connection down id \"$(nmcli -t -f NAME,TYPE connection show --active | grep vpn | cut -d: -f1 | head -1)\"" : "nmcli connection up id \"$(nmcli -t -f NAME,TYPE connection show | grep vpn | cut -d: -f1 | head -1)\"" },
+                            { label: "Screenshot", on: false,               cmd: "$HOME/.local/bin/nc-shot region" }
                         ]
                         delegate: Rectangle {
                             required property var modelData
-                            width: 182; height: 56; radius: 16
+                            width: 120; height: 62; radius: 16
                             color: modelData.on ? Theme.accent : "#20ffffff"
                             Behavior on color { ColorAnimation { duration: 200 } }
                             Column {

@@ -20,4 +20,7 @@ Singleton {
     property bool docOpen: false
     property bool keysOpen: false
     property bool notesOpen: false
+    property bool powerOpen: false
+    property bool nightLight: false
+    property bool vpnUp: false
 }
