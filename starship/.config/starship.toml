@@ -1,0 +1,41 @@
+# nightcity — two-line HUD prompt; colours come from the terminal palette
+add_newline = true
+format = """
+[╭─](bright-black)$directory$git_branch$git_status$python$cmd_duration
+[╰─](bright-black)$character"""
+right_format = "$time"
+
+[directory]
+style = "bold blue"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+[git_branch]
+symbol = " "
+style = "purple"
+format = "[$symbol$branch]($style) "
+
+[git_status]
+style = "yellow"
+format = "[$all_status$ahead_behind]($style) "
+
+[python]
+symbol = " "
+style = "yellow"
+format = "[$symbol$version]($style) "
+
+[cmd_duration]
+min_time = 2000
+style = "bright-black"
+format = "[ $duration]($style) "
+
+[character]
+success_symbol = "[❯](bold cyan)"
+error_symbol = "[❯](bold red)"
+
+[time]
+disabled = false
+time_format = "%H:%M"
+style = "bright-black"
+format = "[$time]($style)"

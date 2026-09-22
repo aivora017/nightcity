@@ -23,3 +23,4 @@ hypr/.config/hypr/colors.lua
 hypr/.config/hypr/colors.*
 hypr/.config/hypr/lock-colors.conf
 hypr/.config/hypr/lock.*
+kitty/.config/kitty/nc-colors.conf
