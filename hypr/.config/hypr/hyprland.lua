@@ -432,3 +432,7 @@ hl.bind("Print",              hl.dsp.exec_cmd("nc-shot region"))
 hl.bind("SHIFT + Print",      hl.dsp.exec_cmd("nc-shot full"))
 hl.bind("SUPER + Print",      hl.dsp.exec_cmd("nc-shot window"))
 hl.bind("SUPER + Tab", hl.dsp.exec_cmd("qs ipc call nc overview"))
+-- window control
+hl.bind("SUPER + V",         hl.dsp.window.float({ action = "toggle" }))
+hl.bind("SUPER + F",         hl.dsp.window.fullscreen({ mode = "maximized", action = "toggle" }))
+hl.bind("SUPER + SHIFT + F", hl.dsp.window.fullscreen({ mode = "fullscreen", action = "toggle" }))
