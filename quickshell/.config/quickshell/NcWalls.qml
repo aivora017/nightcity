@@ -44,17 +44,12 @@ PanelWindow {
         MouseArea { anchors.fill: parent; onClicked: root.close() }
     }
 
-    Rectangle {
+    NcCard {
         id: card
+        open: NcState.wallsOpen
         anchors.centerIn: parent
         width: Math.min(parent.width - 120, 1040)
         height: Math.min(parent.height - 120, 580)
-        radius: 24
-        color: Theme.glassTint
-        border.width: 1
-        border.color: Theme.glassBorder
-        scale: NcState.wallsOpen ? 1 : 0.95
-        Behavior on scale { SpringAnimation { spring: 4; damping: 0.35 } }
 
         Item {
             anchors.fill: parent

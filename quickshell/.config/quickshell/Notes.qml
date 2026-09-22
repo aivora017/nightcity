@@ -38,16 +38,10 @@ PanelWindow {
     Timer { id: autosave; interval: 900; onTriggered: root.save() }
     Timer { id: saved; interval: 1500 }
 
-    Rectangle {
+    NcCard {
         id: card
+        open: NcState.notesOpen
         anchors.fill: parent
-        radius: 22
-        color: Theme.glassTint
-        border.width: 1
-        border.color: Theme.glassBorder
-        scale: NcState.notesOpen ? 1 : 0.96
-        transformOrigin: Item.TopLeft
-        Behavior on scale { SpringAnimation { spring: 4; damping: 0.35 } }
 
         Column {
             anchors { fill: parent; margins: 18 }

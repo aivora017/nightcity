@@ -16,18 +16,10 @@ PanelWindow {
     visible: NcState.centreOpen
     mask: Region { item: card }
 
-    Rectangle {
+    NcCard {
         id: card
+        open: NcState.centreOpen
         anchors.fill: parent
-        radius: 22
-        color: Theme.glassTint
-        border.width: 1
-        border.color: Theme.glassBorder
-        opacity: NcState.centreOpen ? 1 : 0
-        scale: NcState.centreOpen ? 1 : 0.96
-        transformOrigin: Item.TopRight
-        Behavior on opacity { NumberAnimation { duration: 180 } }
-        Behavior on scale { SpringAnimation { spring: 4; damping: 0.35 } }
 
         Column {
             anchors { fill: parent; margins: 18 }

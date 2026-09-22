@@ -34,16 +34,10 @@ PanelWindow {
         return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
     }
 
-    Rectangle {
+    NcCard {
         id: card
+        open: NcState.mediaOpen
         anchors.fill: parent
-        radius: 22
-        color: Theme.glassTint
-        border.width: 1
-        border.color: Theme.glassBorder
-        scale: NcState.mediaOpen ? 1 : 0.95
-        transformOrigin: Item.Top
-        Behavior on scale { SpringAnimation { spring: 4; damping: 0.35 } }
 
         Column {
             anchors.centerIn: parent

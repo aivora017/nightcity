@@ -92,19 +92,12 @@ PanelWindow {
         MouseArea { anchors.fill: parent; onClicked: NcState.docOpen = false }
     }
 
-    Rectangle {
+    NcCard {
         id: card
+        open: NcState.docOpen
         anchors.centerIn: parent
         width: Math.min(parent.width - 120, 940)
         height: Math.min(parent.height - 120, 620)
-        radius: 24
-        color: Theme.glassTint
-        border.width: 1
-        border.color: Theme.glassBorder
-        opacity: NcState.docOpen ? 1 : 0
-        scale: NcState.docOpen ? 1 : 0.95
-        Behavior on opacity { NumberAnimation { duration: 200 } }
-        Behavior on scale { SpringAnimation { spring: 4; damping: 0.35 } }
 
         Row {
             anchors { fill: parent; margins: 22 }

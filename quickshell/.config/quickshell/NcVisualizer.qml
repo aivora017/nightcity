@@ -40,18 +40,10 @@ PanelWindow {
     }
     onVisibleChanged: if (!visible) { levels = []; peaks = [] }
 
-    Rectangle {
+    NcCard {
         id: card
+        open: NcState.vizOpen
         anchors.fill: parent
-        radius: 26
-        color: Theme.glassTint
-        border.width: 1
-        border.color: Theme.glassBorder
-        opacity: NcState.vizOpen ? 1 : 0
-        scale: NcState.vizOpen ? 1 : 0.94
-        transformOrigin: Item.Bottom
-        Behavior on opacity { NumberAnimation { duration: 220 } }
-        Behavior on scale { SpringAnimation { spring: 4; damping: 0.35 } }
 
         // corner brackets, same language as the bar
         Repeater {
