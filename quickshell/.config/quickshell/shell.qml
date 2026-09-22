@@ -21,6 +21,7 @@ ShellRoot {
     NcBoot { }
     NcWalls { }
     NcVisualizer { }
+    NcMedia { }
     Notes { }
     NetPanel { }
     IpcHandler {
@@ -39,6 +40,7 @@ ShellRoot {
         function overview(): void { NcState.overviewOpen = !NcState.overviewOpen }
         function walls(): void { NcState.wallsOpen = !NcState.wallsOpen }
         function viz(): void { NcState.vizOpen = !NcState.vizOpen }
+        function media(): void { NcState.mediaOpen = !NcState.mediaOpen }
        }
     Connections {
         target: Hyprland
@@ -266,6 +268,7 @@ ShellRoot {
 
         // ================= CENTRE: clock =================
         Row {
+            id: centreRow
             anchors.centerIn: parent
             spacing: 14
 
@@ -304,6 +307,12 @@ ShellRoot {
                     font.pixelSize: 11
                 }
             }
+        }
+
+        MouseArea {
+            anchors.fill: centreRow
+            cursorShape: Qt.PointingHandCursor
+            onClicked: NcState.mediaOpen = !NcState.mediaOpen
         }
 
         // ================= RIGHT =================
