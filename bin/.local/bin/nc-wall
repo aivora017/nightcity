@@ -55,9 +55,8 @@ hex() { awk -v h="$1" -v s="$2" -v l="$3" 'BEGIN {
   m = l - c/2
   printf "#%02x%02x%02x", (r+m)*255+0.5, (g+m)*255+0.5, (b+m)*255+0.5 }'; }
 
-PRIMARY=$(hex "$HUE" 92 64)
-ANALOG=$(hex "$((HUE + 35))" 90 68)
-SPLIT=$(hex "$((HUE + 150))" 80 66)
+# lightness is raised per hue until APCA contrast passes (see nc-palette --report)
+read -r PRIMARY ANALOG SPLIT < <("$HOME/.local/bin/nc-palette" "$HUE")
 
 # write to a temp file, then move: readers never see a half-written file
 TMP="$(mktemp "$CACHE/palette.XXXX")"
