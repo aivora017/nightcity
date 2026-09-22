@@ -1,0 +1,56 @@
+#!/usr/bin/env python3
+"""nc-palette — accent colours from a hue, lightness raised until APCA passes.
+  nc-palette 210       -> primary analogous split
+  nc-palette --report  -> contrast sweep across all hues
+"""
+import colorsys, sys
+
+BG, DARK, GLASS_WORST = "#08090a", "#07080f", "#23262f"
+TARGET = 60
+
+def rgb(h):
+    h = h.lstrip("#")
+    return [int(h[i:i + 2], 16) / 255 for i in (0, 2, 4)]
+
+def lum(c):
+    r, g, b = (x ** 2.4 for x in rgb(c))
+    y = 0.2126729 * r + 0.7151522 * g + 0.0721750 * b
+    return y + (0.022 - y) ** 1.414 if y < 0.022 else y
+
+def apca(text, bg):
+    yt, yb = lum(text), lum(bg)
+    if yb > yt:
+        s = (yb ** 0.56 - yt ** 0.57) * 1.14
+        return 0.0 if s < 0.1 else (s - 0.027) * 100
+    s = (yb ** 0.65 - yt ** 0.62) * 1.14
+    return 0.0 if s > -0.1 else (s + 0.027) * 100
+
+def hsl(h, s, l):
+    r, g, b = colorsys.hls_to_rgb((h % 360) / 360, l / 100, s / 100)
+    return "#%02x%02x%02x" % tuple(round(x * 255) for x in (r, g, b))
+
+def passes(c):
+    return abs(apca(c, BG)) >= TARGET and abs(apca(DARK, c)) >= TARGET
+
+def tuned(h, s, l0):
+    for l in range(l0, 83):
+        c = hsl(h, s, l)
+        if passes(c):
+            return c, l
+    return hsl(h, s, 82), 82
+
+def palette(h):
+    return tuned(h, 92, 64)[0], tuned(h + 35, 90, 68)[0], tuned(h + 150, 80, 66)[0]
+
+if len(sys.argv) > 1 and sys.argv[1] == "--report":
+    fb_n = fa_n = 0
+    for h in range(0, 360, 15):
+        f = hsl(h, 92, 64); t, l = tuned(h, 92, 64)
+        fb, fa = not passes(f), not passes(t)
+        fb_n += fb; fa_n += fa
+        print(f"{h:>4}  fixed {f} bg {abs(apca(f, BG)):5.1f} dark {abs(apca(DARK, f)):5.1f}{' X' if fb else '  '}"
+              f"   tuned {t} L{l} bg {abs(apca(t, BG)):5.1f} dark {abs(apca(DARK, t)):5.1f}{' X' if fa else ''}")
+    print(f"\nfailing hues: fixed {fb_n}/24   tuned {fa_n}/24")
+    sys.exit(0)
+
+print(*palette(int(float(sys.argv[1]))))
