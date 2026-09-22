@@ -270,41 +270,68 @@ ShellRoot {
         Row {
             id: centreRow
             anchors.centerIn: parent
-            spacing: 14
+            spacing: 10
 
-
-            Shape {
-                width: 30; height: 30
+            Column {
                 anchors.verticalCenter: parent.verticalCenter
-                ShapePath {
-                    strokeColor: "#1fffffff"; strokeWidth: 2.5; fillColor: "transparent"
-                    PathAngleArc { centerX: 15; centerY: 15; radiusX: 12; radiusY: 12; startAngle: 0; sweepAngle: 360 }
+                spacing: 4
+
+                Row {
+                    spacing: 1
+                    Text {
+                        text: Qt.formatDateTime(clock.date, "HH")
+                        color: "white"
+                        font.family: Theme.faceDisplay
+                        font.pixelSize: 19
+                    }
+                    Text {
+                        text: ":"
+                        color: Theme.accent
+                        font.family: Theme.faceDisplay
+                        font.pixelSize: 19
+                        opacity: clock.date.getSeconds() % 2 === 0 ? 1 : 0.25
+                        Behavior on opacity { NumberAnimation { duration: 400; easing.type: Easing.InOutSine } }
+                    }
+                    Text {
+                        text: Qt.formatDateTime(clock.date, "mm")
+                        color: "white"
+                        font.family: Theme.faceDisplay
+                        font.pixelSize: 19
+                    }
                 }
-                ShapePath {
-                    strokeColor: Theme.accent; strokeWidth: 2.5; fillColor: "transparent"
-                    capStyle: ShapePath.RoundCap
-                    PathAngleArc {
-                        centerX: 15; centerY: 15; radiusX: 12; radiusY: 12
-                        startAngle: -90
-                        sweepAngle: 360 * clock.date.getSeconds() / 60
+
+                // 30 segments, one lights every 2 seconds across the minute
+                Row {
+                    spacing: 1
+                    Repeater {
+                        model: 30
+                        delegate: Rectangle {
+                            required property int index
+                            width: 3
+                            height: 3
+                            radius: 1
+                            color: index < Math.floor(clock.date.getSeconds() / 2) + 1 ? Theme.accent : "#22ffffff"
+                            Behavior on color { ColorAnimation { duration: 250 } }
+                        }
                     }
                 }
             }
 
             Column {
                 anchors.verticalCenter: parent.verticalCenter
+                spacing: 1
                 Text {
-                    text: Qt.formatDateTime(clock.date, "HH:mm")
-                    color: "white"
-                    font.family: Theme.faceDisplay
-                    font.pixelSize: 17
-                    font.letterSpacing: 1
+                    text: Qt.formatDateTime(clock.date, "ss")
+                    color: Theme.accent
+                    font.family: Theme.faceData
+                    font.pixelSize: 11
                 }
                 Text {
-                    text: Qt.formatDateTime(clock.date, "ddd d MMM")
+                    text: Qt.formatDateTime(clock.date, "ddd d MMM").toUpperCase()
                     color: Theme.muted
                     font.family: Theme.faceHeader
-                    font.pixelSize: 11
+                    font.pixelSize: 10
+                    font.letterSpacing: 1
                 }
             }
         }
