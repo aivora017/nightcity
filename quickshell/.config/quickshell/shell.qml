@@ -1,3 +1,4 @@
+
 //  nightcity — glass bar v0.5
 //  Colours and type come from Theme.qml. Right side lives in Tray.qml.
 
@@ -17,6 +18,7 @@ ShellRoot {
     KeyBoard { }
     NcPower { }
     NcOverview { }
+    NcBoot { }
     Notes { }
     NetPanel { }
     IpcHandler {
