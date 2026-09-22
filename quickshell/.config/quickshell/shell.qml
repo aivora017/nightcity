@@ -22,6 +22,7 @@ ShellRoot {
     NcWalls { }
     NcVisualizer { }
     NcMedia { }
+    NcDesktop { }
     Notes { }
     NetPanel { }
     IpcHandler {
