@@ -33,6 +33,7 @@ PanelWindow {
         { name: "Notes",           hint: "Panel · SUPER+SHIFT+N", run: () => NcState.notesOpen = true },
         { name: "System health",   hint: "Panel",                 run: () => NcState.docOpen = true },
         { name: "Connections",     hint: "Panel",                 run: () => NcState.netOpen = true },
+        { name: "Visualizer",      hint: "Panel · SUPER+SHIFT+A", run: () => NcState.vizOpen = true },
         { name: "Wallpapers",      hint: "Panel · SUPER+W",       run: () => NcState.wallsOpen = true },
         { name: "Toggle UI sounds", hint: "Action",                run: () => Quickshell.execDetached(["sh", "-c", "f=$HOME/.cache/nightcity/sounds-off; [ -f $f ] && rm $f || touch $f"]) }
     ]

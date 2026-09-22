@@ -438,3 +438,4 @@ hl.bind("SUPER + F",         hl.dsp.window.fullscreen({ mode = "maximized", acti
 hl.bind("SUPER + SHIFT + F", hl.dsp.window.fullscreen({ mode = "fullscreen", action = "toggle" }))
 hl.bind("SUPER + W", hl.dsp.exec_cmd("qs ipc call nc walls"), { description = "Wallpaper picker" })
 hl.bind("SUPER + SHIFT + W", hl.dsp.exec_cmd("nc-wall-next --random"), { description = "Random wallpaper" })
+hl.bind("SUPER + SHIFT + A", hl.dsp.exec_cmd("qs ipc call nc viz"), { description = "Audio visualizer" })

@@ -20,6 +20,7 @@ ShellRoot {
     NcOverview { }
     NcBoot { }
     NcWalls { }
+    NcVisualizer { }
     Notes { }
     NetPanel { }
     IpcHandler {
@@ -37,6 +38,7 @@ ShellRoot {
         function power(): void { NcState.powerOpen = !NcState.powerOpen }
         function overview(): void { NcState.overviewOpen = !NcState.overviewOpen }
         function walls(): void { NcState.wallsOpen = !NcState.wallsOpen }
+        function viz(): void { NcState.vizOpen = !NcState.vizOpen }
        }
     Connections {
         target: Hyprland
@@ -262,39 +264,11 @@ ShellRoot {
             }
         }
 
-        // ================= CENTRE: cava + clock =================
+        // ================= CENTRE: clock =================
         Row {
             anchors.centerIn: parent
             spacing: 14
 
-            Item {
-                id: cavaBox
-                property var levels: []
-                width: 24 * 6
-                height: 32
-                anchors.verticalCenter: parent.verticalCenter
-
-                Row {
-                    anchors.centerIn: parent
-                    spacing: 2
-                    Repeater {
-                        model: 24
-                        delegate: Rectangle {
-                            required property int index
-                            width: 4
-                            radius: 2
-                            height: Math.max(3, (cavaBox.levels[index] || 0) / 100 * cavaBox.height)
-                            anchors.verticalCenter: parent.verticalCenter
-                            Behavior on height { NumberAnimation { duration: 70 } }
-                            gradient: Gradient {
-                                GradientStop { position: 0.0; color: Theme.accent3 }
-                                GradientStop { position: 0.5; color: Theme.accent }
-                                GradientStop { position: 1.0; color: Theme.accent2 }
-                            }
-                        }
-                    }
-                }
-            }
 
             Shape {
                 width: 30; height: 30
@@ -339,21 +313,4 @@ ShellRoot {
     }
 
     // ================= DATA =================
-    Process {
-        id: cava
-        command: ["cava", "-p", Quickshell.env("HOME") + "/.config/cava/nightcity.conf"]
-        running: true
-        stdout: SplitParser {
-            onRead: data => {
-                const v = data.split(";");
-                if (v.length >= 24) cavaBox.levels = v.slice(0, 24).map(Number);
-            }
-        }
-        onRunningChanged: if (!running) cavaRestart.start()
-    }
-    Timer {
-        id: cavaRestart
-        interval: 3000
-        onTriggered: cava.running = true
-    }
 }

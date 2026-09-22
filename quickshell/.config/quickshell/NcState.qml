@@ -28,6 +28,7 @@ Singleton {
     property bool locationOn: false
     property bool overviewOpen: false
     property bool wallsOpen: false
+    property bool vizOpen: false
 
     // ---------- UI sounds ----------
     function play(name) {
@@ -42,4 +43,5 @@ Singleton {
     onPowerOpenChanged:    play(powerOpen ? "open" : "close")
     onOverviewOpenChanged: play(overviewOpen ? "open" : "close")
     onWallsOpenChanged:    play(wallsOpen ? "open" : "close")
+    onVizOpenChanged:      play(vizOpen ? "open" : "close")
 }
