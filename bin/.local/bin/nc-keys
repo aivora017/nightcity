@@ -50,6 +50,9 @@ awk '
     if (verb == "exec_cmd") { label = arg; sub(/ .*$/, "", label) }
     else { gsub(/_/, " ", label); if (arg != "") label = label " " arg }
     gsub(/\\/, "", label)
+    if (match($0, /description[[:space:]]*=[[:space:]]*"[^"]*"/)) {
+      d = substr($0, RSTART, RLENGTH); sub(/^[^"]*"/, "", d); sub(/"$/, "", d); label = d
+    }
 
     printf "%s{\"group\":\"%s\",\"key\":\"%s\",\"action\":\"%s\"}", sep, group, key, label
     sep = ",\n  "

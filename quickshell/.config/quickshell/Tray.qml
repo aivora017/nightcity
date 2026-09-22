@@ -108,6 +108,19 @@ Row {
         }
     }
 
+    // ================= SHORTCUTS =================
+    TrayButton {
+        width: 36
+        onClicked: NcState.keysOpen = !NcState.keysOpen
+        Text {
+            anchors.centerIn: parent
+            text: tray.icon(0xF030C)
+            color: Theme.body
+            font.family: Theme.faceData
+            font.pixelSize: 17
+        }
+    }
+
     // ================= HEALTH =================
     TrayButton {
         width: 36

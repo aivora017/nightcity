@@ -26,7 +26,13 @@ PanelWindow {
     readonly property var actions: [
         { name: "Next wallpaper",  hint: "Action",  run: () => Quickshell.execDetached(["nc-wall-next"]) },
         { name: "Reload shell",    hint: "Action",  run: () => Quickshell.execDetached(["sh", "-c", "pkill -x quickshell; quickshell & disown"]) },
-        { name: "Lock screen",     hint: "Action",  run: () => Quickshell.execDetached(["loginctl", "lock-session"]) }
+        { name: "Lock screen",     hint: "Action",  run: () => Quickshell.execDetached(["loginctl", "lock-session"]) },
+        { name: "Shortcuts",       hint: "Panel · SUPER+/",       run: () => NcState.keysOpen = true },
+        { name: "Workspace overview", hint: "Panel · SUPER+Tab",  run: () => NcState.overviewOpen = true },
+        { name: "Power menu",      hint: "Panel · SUPER+X",       run: () => NcState.powerOpen = true },
+        { name: "Notes",           hint: "Panel · SUPER+SHIFT+N", run: () => NcState.notesOpen = true },
+        { name: "System health",   hint: "Panel",                 run: () => NcState.docOpen = true },
+        { name: "Connections",     hint: "Panel",                 run: () => NcState.netOpen = true }
     ]
 
     readonly property var results: {
