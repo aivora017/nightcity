@@ -27,6 +27,7 @@ Singleton {
     property string governor: "powersave"
     property bool locationOn: false
     property bool overviewOpen: false
+    property bool wallsOpen: false
 
     // ---------- UI sounds ----------
     function play(name) {
@@ -40,4 +41,5 @@ Singleton {
     onNotesOpenChanged:    play(notesOpen ? "open" : "close")
     onPowerOpenChanged:    play(powerOpen ? "open" : "close")
     onOverviewOpenChanged: play(overviewOpen ? "open" : "close")
+    onWallsOpenChanged:    play(wallsOpen ? "open" : "close")
 }

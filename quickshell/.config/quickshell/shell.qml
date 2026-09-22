@@ -19,6 +19,7 @@ ShellRoot {
     NcPower { }
     NcOverview { }
     NcBoot { }
+    NcWalls { }
     Notes { }
     NetPanel { }
     IpcHandler {
@@ -35,6 +36,7 @@ ShellRoot {
         function notes(): void { NcState.notesOpen = !NcState.notesOpen }
         function power(): void { NcState.powerOpen = !NcState.powerOpen }
         function overview(): void { NcState.overviewOpen = !NcState.overviewOpen }
+        function walls(): void { NcState.wallsOpen = !NcState.wallsOpen }
        }
     Connections {
         target: Hyprland
