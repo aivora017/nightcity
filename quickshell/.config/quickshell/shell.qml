@@ -16,6 +16,7 @@ ShellRoot {
     Doctor { }
     KeyBoard { }
     NcPower { }
+    NcOverview { }
     Notes { }
     NetPanel { }
     IpcHandler {
@@ -31,6 +32,7 @@ ShellRoot {
         function keys(): void { NcState.keysOpen = !NcState.keysOpen }
         function notes(): void { NcState.notesOpen = !NcState.notesOpen }
         function power(): void { NcState.powerOpen = !NcState.powerOpen }
+        function overview(): void { NcState.overviewOpen = !NcState.overviewOpen }
        }
     SystemClock {
         id: clock

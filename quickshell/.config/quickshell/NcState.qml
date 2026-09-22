@@ -26,4 +26,5 @@ Singleton {
     property bool btScanning: false
     property string governor: "powersave"
     property bool locationOn: false
+    property bool overviewOpen: false
 }
