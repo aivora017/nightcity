@@ -27,4 +27,17 @@ Singleton {
     property string governor: "powersave"
     property bool locationOn: false
     property bool overviewOpen: false
+
+    // ---------- UI sounds ----------
+    function play(name) {
+        Quickshell.execDetached([Quickshell.env("HOME") + "/.local/bin/nc-play", name]);
+    }
+    onLauncherOpenChanged: play(launcherOpen ? "open" : "close")
+    onNetOpenChanged:      play(netOpen ? "open" : "close")
+    onCentreOpenChanged:   play(centreOpen ? "open" : "close")
+    onDocOpenChanged:      play(docOpen ? "open" : "close")
+    onKeysOpenChanged:     play(keysOpen ? "open" : "close")
+    onNotesOpenChanged:    play(notesOpen ? "open" : "close")
+    onPowerOpenChanged:    play(powerOpen ? "open" : "close")
+    onOverviewOpenChanged: play(overviewOpen ? "open" : "close")
 }

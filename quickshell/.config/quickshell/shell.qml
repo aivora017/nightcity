@@ -34,6 +34,11 @@ ShellRoot {
         function power(): void { NcState.powerOpen = !NcState.powerOpen }
         function overview(): void { NcState.overviewOpen = !NcState.overviewOpen }
        }
+    Connections {
+        target: Hyprland
+        function onFocusedWorkspaceChanged() { NcState.play("ws") }
+    }
+
     SystemClock {
         id: clock
         precision: SystemClock.Seconds

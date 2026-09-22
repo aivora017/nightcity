@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# nc-play <name> — play a UI sound unless sounds are switched off
+[[ -f "$HOME/.cache/nightcity/sounds-off" ]] && exit 0
+f="$HOME/nightcity/sounds/$1.wav"
+[[ -f "$f" ]] && exec pw-play --volume 0.6 "$f" >/dev/null 2>&1
+

@@ -32,7 +32,8 @@ PanelWindow {
         { name: "Power menu",      hint: "Panel · SUPER+X",       run: () => NcState.powerOpen = true },
         { name: "Notes",           hint: "Panel · SUPER+SHIFT+N", run: () => NcState.notesOpen = true },
         { name: "System health",   hint: "Panel",                 run: () => NcState.docOpen = true },
-        { name: "Connections",     hint: "Panel",                 run: () => NcState.netOpen = true }
+        { name: "Connections",     hint: "Panel",                 run: () => NcState.netOpen = true },
+        { name: "Toggle UI sounds", hint: "Action",                run: () => Quickshell.execDetached(["sh", "-c", "f=$HOME/.cache/nightcity/sounds-off; [ -f $f ] && rm $f || touch $f"]) }
     ]
 
     readonly property var results: {

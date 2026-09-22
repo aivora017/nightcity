@@ -15,6 +15,7 @@ Scope {
         onNotification: n => {
             n.tracked = true;
             NcState.unread++;
+            NcState.play(n.urgency === NotificationUrgency.Critical ? "alert" : "notify");
             NcState.remember({
                 app: n.appName,
                 summary: n.summary,
